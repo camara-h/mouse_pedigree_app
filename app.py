@@ -203,13 +203,27 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     return filtered
 
 
+def safe_predecessors(graph: nx.DiGraph, node: str) -> list[str]:
+    """Return predecessors without crashing if the node is absent from the graph."""
+    if node not in graph:
+        return []
+    return list(graph.predecessors(node))
+
+
+def safe_successors(graph: nx.DiGraph, node: str) -> list[str]:
+    """Return successors without crashing if the node is absent from the graph."""
+    if node not in graph:
+        return []
+    return list(graph.successors(node))
+
+
 def get_ancestors(graph: nx.DiGraph, node: str, generations: int) -> set[str]:
     seen = set()
     current = {node}
     for _ in range(generations):
         parents = set()
         for n in current:
-            parents.update(graph.predecessors(n))
+            parents.update(safe_predecessors(graph, n))
         parents -= seen
         seen.update(parents)
         current = parents
@@ -224,7 +238,7 @@ def get_descendants(graph: nx.DiGraph, node: str, generations: int) -> set[str]:
     for _ in range(generations):
         children = set()
         for n in current:
-            children.update(graph.successors(n))
+            children.update(safe_successors(graph, n))
         children -= seen
         seen.update(children)
         current = children
@@ -235,9 +249,8 @@ def get_descendants(graph: nx.DiGraph, node: str, generations: int) -> set[str]:
 
 def get_siblings(graph: nx.DiGraph, node: str) -> set[str]:
     siblings = set()
-    parents = list(graph.predecessors(node))
-    for parent in parents:
-        siblings.update(graph.successors(parent))
+    for parent in safe_predecessors(graph, node):
+        siblings.update(safe_successors(graph, parent))
     siblings.discard(node)
     return siblings
 
