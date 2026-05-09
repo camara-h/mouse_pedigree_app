@@ -730,7 +730,13 @@ def timeline_tab(data: PedigreeData, filtered: pd.DataFrame) -> None:
         ordered_values = summary[group_col].head(max_categories).tolist()
 
     plot_df = df[df[group_col].isin(ordered_values)].copy()
-    plot_df[group_col] = pd.Categorical(plot_df[group_col], categories=list(reversed(ordered_values)), ordered=True)
+
+    # Plotly does not reliably respect pandas Categorical ordering for a y-axis
+    # in every Streamlit/Plotly version. Set the y-axis category array explicitly.
+    # For a y-axis, categoryarray is interpreted from bottom to top, so we reverse
+    # the selected top-to-bottom order to display the first requested group at the top.
+    y_axis_order = list(reversed(ordered_values))
+    plot_df[group_col] = plot_df[group_col].astype(str)
 
     fig = px.scatter(
         plot_df,
@@ -739,7 +745,9 @@ def timeline_tab(data: PedigreeData, filtered: pd.DataFrame) -> None:
         color=color_by if color_by in plot_df.columns else None,
         hover_data=hover_cols,
         title=f"Animals by DOB and {group_col}",
+        category_orders={group_col: y_axis_order},
     )
+    fig.update_yaxes(categoryorder="array", categoryarray=y_axis_order)
     fig.update_layout(height=max(550, 25 * min(max_categories, plot_df[group_col].nunique()) + 220))
     st.plotly_chart(fig, use_container_width=True)
 
