@@ -1,34 +1,35 @@
 # Transnetyx Mouse Pedigree Explorer
 
-A Streamlit app for exploring mouse colony history exported from Transnetyx.
+A Streamlit app to explore mouse colony history exported from Transnetyx.
 
 ## What it does
 
-- Uploads a Transnetyx Excel export.
-- Cleans animal IDs, including extra spaces in Mouse ID, Father ID, and Mother ID.
-- Builds parent-child relationships from Father ID and Mother ID.
-- Lets you filter by DOB, strain, sex, use, owner, genotype, and animal ID.
-- Shows an interactive pedigree for a selected mouse.
-- Shows colony timelines by month.
-- Reports data quality issues, including missing parents, duplicate Mouse IDs, and parent IDs that do not appear in the file.
-- Exports cleaned animal tables and parent-child edge tables as CSV.
+- Upload a Transnetyx Excel export.
+- Clean Mouse ID, Father ID, Mother ID, and Cage ID fields.
+- Parse DOB, DOD, and Wean Date when those columns are present.
+- Filter by date, strain, sex, status, use, owner, genotype, and ID.
+- Search one or multiple Mouse IDs at once.
+- Build interactive pedigree networks with ancestors, descendants, and optional siblings.
+- Export displayed pedigree edges as CSV.
+- Export a static PNG of the displayed pedigree.
+- Show colony timeline plots by DOB.
+- Reorder timeline rows alphabetically, by most recent birth, by oldest birth, or by largest group.
+- Plot monthly births as a single-color bar chart or colored by owner/strain/sex/status/use.
+- Calculate Alive at Range using DOB and DOD.
+- Generate an Alive at Range report for monthly or custom financial summaries.
+- Run basic data QC checks for missing parents, parent IDs not found in file, duplicate IDs, and potential founders.
 
-## Expected input
+## Alive at Range definition
 
-The Excel file should contain columns like:
+An animal is marked as alive within the selected range when:
 
-- Mouse ID
-- Father ID
-- Mother ID
-- DOB
-- Sex
-- Strain
-- Genotype
-- Use
-- Owner
-- Cage ID
+```text
+DOB <= range end
+AND
+(DOD is blank OR DOD >= range start)
+```
 
-The app is designed for Transnetyx exports that include grouping rows such as `Strain: ...`. Those rows are removed automatically.
+This means the animal was alive at any point during the selected date window.
 
 ## Run locally
 
@@ -48,10 +49,10 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Suggested GitHub structure
+## Suggested repository structure
 
 ```text
-transnetyx-pedigree-explorer/
+mouse_pedigree_app/
 ├── app.py
 ├── requirements.txt
 ├── README.md
@@ -61,27 +62,11 @@ transnetyx-pedigree-explorer/
 Suggested `.gitignore`:
 
 ```text
-.venv/
-__pycache__/
-*.pyc
-.DS_Store
 *.xlsx
 *.xls
 *.csv
+__pycache__/
+.venv/
 ```
 
-Do not commit lab animal Excel exports to a public repository.
-
-## Deploy on Streamlit Community Cloud
-
-1. Create a GitHub repo.
-2. Add `app.py`, `requirements.txt`, and `README.md`.
-3. Go to Streamlit Community Cloud.
-4. Create a new app from your GitHub repo.
-5. Select `app.py` as the main file.
-
-The app will ask users to upload the Excel file each time, so the animal data does not need to be stored in GitHub.
-
-## Notes
-
-For very large pedigrees, avoid rendering all animals at once. Use the Animal pedigree tab and filter by Mouse ID, strain, date range, owner, or genotype.
+Do not commit real animal exports to a public GitHub repository.
