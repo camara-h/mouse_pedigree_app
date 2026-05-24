@@ -1,27 +1,25 @@
 # Transnetyx Mouse Pedigree Explorer
 
-A Streamlit app to explore mouse colony history exported from Transnetyx.
+A Streamlit app for exploring Transnetyx mouse history exports.
 
-## What it does
+## Features
 
 - Upload a Transnetyx Excel export.
-- Clean Mouse ID, Father ID, Mother ID, and Cage ID fields.
-- Parse DOB, DOD, and Wean Date when those columns are present.
-- Filter by date, strain, sex, status, use, owner, genotype, and ID.
-- Search one or multiple Mouse IDs at once.
-- Build interactive pedigree networks with ancestors, descendants, and optional siblings.
-- Export displayed pedigree edges as CSV.
-- Export a static PNG of the displayed pedigree.
-- Show colony timeline plots by DOB.
-- Reorder timeline rows alphabetically, by most recent birth, by oldest birth, or by largest group.
-- Plot monthly births as a single-color bar chart or colored by owner/strain/sex/status/use.
-- Calculate Alive at Range using DOB and DOD.
-- Generate an Alive at Range report for monthly or custom financial summaries.
-- Run basic data QC checks for missing parents, parent IDs not found in file, duplicate IDs, and potential founders.
+- Clean Mouse ID, Father ID, Mother ID, and Cage ID values.
+- Filter by date range, strain, sex, status, use, owner, genotype, animal ID, parent ID, or cage ID.
+- Build interactive pedigree networks for one or more selected animals.
+- Export displayed pedigree edges as CSV and a static PNG.
+- View animal timelines by DOB.
+- Reorder timeline rows alphabetically, by most recent birth, by oldest birth, or by most animals.
+- Color monthly birth counts by owner, strain, sex, status, or use.
+- Calculate mice alive anytime during a selected date range.
+- Count unique cages with alive animals during a selected date range.
+- Summarize cage counts by owner category and export monthly-report-ready tables.
+- Run data QC for missing parents, missing cage IDs, duplicated IDs, and parent IDs not found in the file.
 
-## Alive at Range definition
+## Alive-anytime logic
 
-An animal is marked as alive within the selected range when:
+A mouse is considered alive during a selected range if:
 
 ```text
 DOB <= range end
@@ -29,7 +27,7 @@ AND
 (DOD is blank OR DOD >= range start)
 ```
 
-This means the animal was alive at any point during the selected date window.
+The cage counter uses the same alive-anytime logic, then counts unique Cage IDs among those alive animals.
 
 ## Run locally
 
@@ -49,24 +47,12 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Suggested repository structure
+## Privacy
 
-```text
-mouse_pedigree_app/
-├── app.py
-├── requirements.txt
-├── README.md
-└── .gitignore
-```
-
-Suggested `.gitignore`:
+Do not commit real animal export files to a public GitHub repository. Add Excel and CSV files to `.gitignore`.
 
 ```text
 *.xlsx
 *.xls
 *.csv
-__pycache__/
-.venv/
 ```
-
-Do not commit real animal exports to a public GitHub repository.
