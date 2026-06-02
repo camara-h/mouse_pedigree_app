@@ -32,6 +32,7 @@ DISPLAY_COLUMNS = [
     "DOB",
     "DOD",
     "Age",
+    "Transfer Date",
     "Strain",
     "Genotype",
     "Use",
@@ -48,7 +49,7 @@ DISPLAY_COLUMNS = [
     "Mother Genotype",
 ]
 
-DATE_COLUMNS = ["DOB", "DOD", "Wean Date"]
+DATE_COLUMNS = ["DOB", "DOD", "Wean Date", "Transfer Date"]
 
 SEX_COLORS = {
     "Female": "#F9A8D4",
@@ -97,7 +98,7 @@ def normalize_column_names(columns: Iterable) -> list[str]:
 
 
 def add_missing_optional_columns(df: pd.DataFrame) -> pd.DataFrame:
-    for col in ["Status", "DOD", "Wean Date", "Litter Name", "Cage ID", "Owner", "Use", "Sex", "Strain", "Genotype"]:
+    for col in ["Status", "DOD", "Transfer Date", "Wean Date", "Litter Name", "Cage ID", "Owner", "Use", "Sex", "Strain", "Genotype"]:
         if col not in df.columns:
             df[col] = None
     return df
@@ -184,11 +185,23 @@ def infer_sheet_names(uploaded_file_bytes: bytes) -> list[str]:
 
 def alive_anytime_mask(df: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp) -> pd.Series:
     dob_ok = df["DOB"].notna() & (df["DOB"] <= end)
+
+    # Transnetyx history exports may mark animals as Transferred without a DOD.
+    # For active-range and cage-count purposes, a transfer date should be treated
+    # as the date the animal stopped being active in this colony.
+    inactive_dates = []
     if "DOD" in df.columns:
-        dod_ok = df["DOD"].isna() | (df["DOD"] >= start)
+        inactive_dates.append(df["DOD"])
+    if "Transfer Date" in df.columns:
+        inactive_dates.append(df["Transfer Date"])
+
+    if inactive_dates:
+        inactive_date = pd.concat(inactive_dates, axis=1).min(axis=1)
+        active_through_range_start = inactive_date.isna() | (inactive_date >= start)
     else:
-        dod_ok = pd.Series(True, index=df.index)
-    return dob_ok & dod_ok
+        active_through_range_start = pd.Series(True, index=df.index)
+
+    return dob_ok & active_through_range_start
 
 
 def get_default_date_range(df: pd.DataFrame) -> tuple[date, date]:
@@ -755,7 +768,7 @@ def alive_and_cages_tab(data: PedigreeData, filtered: pd.DataFrame, context: Fil
     cage_summary = build_cage_summary(alive_df)
 
     date_text = f"{start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}"
-    st.caption(f"Alive-anytime logic for {date_text}: DOB is on or before the range end, and DOD is blank or on or after the range start.")
+    st.caption(f"Alive-anytime logic for {date_text}: DOB is on or before the range end, and no DOD or Transfer Date occurs before the range start.")
 
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Alive mice in range", f"{alive_df['Mouse ID'].nunique():,}")
